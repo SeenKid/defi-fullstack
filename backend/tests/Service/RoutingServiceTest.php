@@ -54,7 +54,7 @@ class RoutingServiceTest extends TestCase
         $this->expectException(RouteNotFoundException::class);
         $this->routingService->calculateRoute('UNKNOWN', 'MX');
     }
-
+ 
     public function testCalculateRouteThrowsExceptionForUnknownToStation(): void
     {
         $this->expectException(RouteNotFoundException::class);
