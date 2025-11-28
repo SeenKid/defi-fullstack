@@ -1,0 +1,68 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/var/www/html
+      - ./stations.json:/var/www/html/data/stations.json:ro
+      - ./distances.json:/var/www/html/data/distances.json:ro
+    environment:
+      - APP_ENV=dev
+      - APP_SECRET=${APP_SECRET:-your-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://train_user:train_pass@postgres:5432/train_db?serverVersion=15
+      - JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+      - JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+      - JWT_PASSPHRASE=${JWT_PASSPHRASE:-train_secret_passphrase}
+      - CORS_ALLOW_ORIGIN=^https?://localhost
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=https://localhost/api/v1
+    ports:
+      - "5173:5173"
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=train_db
+      - POSTGRES_USER=train_user
+      - POSTGRES_PASSWORD=train_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
+

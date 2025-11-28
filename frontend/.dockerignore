@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+.vitest
+.env.local
+.env.*.local
+
